@@ -1,0 +1,103 @@
+using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+
+
+public class FannyPack : MonoBehaviour {
+
+
+	public static List <string> inventory = new List <string> ();
+	
+	string held;
+	//Interactions interact;
+	public static int current;
+	
+	// Use this for initialization
+	void Start () {
+		//interact = gameObject.GetComponent <Interactions> ();
+		inventory.Clear ();
+		inventory.Add ("Empty");
+		current = 0;
+		
+	}
+	
+	// Update is called once per frame
+	void Update () {
+	
+		if (Input.GetKeyUp ("e") || Input.GetKeyUp ("q"))
+		{
+			SwitchItem ();
+		}
+
+	}
+	
+	void Pickup (string item)
+	{
+		inventory.Add (item);
+		Debug.Log (inventory);
+	}
+
+	public static void SwitchItem()
+	{
+		int sizeOfList = inventory.Count;
+
+
+		if (sizeOfList >= 2)
+		{
+			//Move Next
+			if (Input.GetKeyUp("e"))
+			{
+				current++;
+				if (current >= sizeOfList)
+				{
+					current = 0;
+				}
+				//Debug.Log ("current: " + current + "" + inventory[current] + " Totes: " + sizeOfList);
+				Transform handle = GameObject.Find ("Player/Face/Hand").transform;
+				foreach (Transform child in handle)
+				{
+					if(child != null && child.gameObject.name != (inventory[current]))
+						child.gameObject.SetActive(false);
+					
+					if (child.gameObject.name == (inventory[current]))
+					{
+						child.gameObject.SetActive (true);
+					}
+				}
+			}
+			//Move Previous
+			if (Input.GetKeyUp("q"))
+			{
+				current--;
+				if (current < 0)
+				{
+					current = sizeOfList - 1;
+				}
+				//Debug.Log ("current: " + current + "" + inventory[current] + " Totes: " + sizeOfList);
+				Transform handle = GameObject.Find ("Player/Face/Hand").transform;
+				foreach (Transform child in handle)
+				{
+					if(child != null && child.gameObject.name != (inventory[current]))
+						child.gameObject.SetActive(false);
+					
+					if (child.gameObject.name == (inventory[current]))
+					{
+						child.gameObject.SetActive (true);
+					}
+				}
+			}
+		}
+	}
+
+
+	/*
+	// Goal:  find if item in inv meets prereq criteria, set prereq bool to true, and remove item from inv.
+	public static void UseItem (string item)
+	{
+		// find in parent
+		interact.current.GetComponent <ActionItem> ().actionable = false;
+		inventory.Remove (item);
+		//player.GetComponent <Interactions> ().current.GetComponent <ActionItem> ().prereqFulfilled = true;
+	}
+	*/
+}
