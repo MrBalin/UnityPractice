@@ -1,0 +1,34 @@
+using UnityEngine;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+
+public class CollectableGobbler : MonoBehaviour {
+
+	public string collectableType;
+	public int amountNeeded;
+
+
+//GOAL: Find how many of a certain string is in a list
+	void Inquiry ()
+	{
+		if (Input.GetButtonUp ("Fire1"))
+		{
+			Dictionary <string, int> collection = new Dictionary <string, int> ();
+			foreach (string d in FannyPack.collectableInventory)
+			{
+				if (collection.ContainsKey (d))
+					collection [d]++;
+				else
+					collection.Add (d,1);
+			}
+			/* replace FannyPack.collectableInventory with your list!
+		 * when the foreach loop ends, you'll have one entry per unique value in collection.
+		 * you can get the count of each item by accessing collection[d], where  is some int
+		 * from your original list.
+		 */
+			Debug.Log (collection[collectableType] + " " + collectableType);
+
+		}
+	}
+}
