@@ -1,0 +1,64 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.AI;
+
+[RequireComponent (typeof (SphereCollider))]
+public class NPC_Ears : MonoBehaviour {
+
+
+	[HideInInspector] public Vector3 PersonalHeardLocation;
+	[HideInInspector] public Vector3 ResetPosition = new Vector3 (1000,1000,1000);
+
+	private GameObject player;
+	private NavMeshAgent myNavMeshAgent;
+	private SphereCollider bubbleOfHearing;
+
+	void Awake()
+	{
+		PersonalHeardLocation = ResetPosition;
+		player = GameObject.FindGameObjectWithTag("Player");
+		myNavMeshAgent = GetComponentInParent<NavMeshAgent>();
+		bubbleOfHearing = GetComponent<SphereCollider>();
+	}
+
+	void OnTriggerStay(Collider col)
+	{
+		if(col.gameObject.tag == "Player")
+		{
+			//If not bothering to sneak around
+			if (PlayerControls_Alpha.instance.myStateMachine.Pace != HandleStateMachine.myPace.Crawl)
+			{
+				//but not just standing around
+				if(PlayerControls_Alpha.instance.myCharacterController.Controller.velocity.x > .05f || PlayerControls_Alpha.instance.myCharacterController.Controller.velocity.z > .05f) 
+				{
+					//Check if within hearing distance
+					if(CalculatePathLength(player.transform.position) <= bubbleOfHearing.radius) 
+					{
+                        Debug.Log(this.transform.parent.name + " heard Player");
+                        PersonalHeardLocation = player.transform.position;
+					}
+				}
+			}
+		}
+	}
+
+	float CalculatePathLength(Vector3 targetPosition)
+	{
+		NavMeshPath myPath = new NavMeshPath();
+		if(myNavMeshAgent.enabled) myNavMeshAgent.CalculatePath(targetPosition, myPath);
+
+
+		//add player and npc positions
+		Vector3[] allWayPoints = new Vector3[myPath.corners.Length + 2];
+		allWayPoints[0] = transform.position;
+		allWayPoints[allWayPoints.Length - 1] = targetPosition;
+		for(int i = 0; i < myPath.corners.Length; i++) allWayPoints[i+1] = myPath.corners[i];
+
+		//Find just how far away Target is
+		float pathlength = 0;
+		for(int i = 0; i < allWayPoints.Length - 1; i++) pathlength += Vector3.Distance(allWayPoints[i], allWayPoints[i+1]);
+		return pathlength;
+	}
+
+}
