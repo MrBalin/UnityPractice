@@ -1,0 +1,182 @@
+using UnityEngine;
+using System.Collections.Generic;
+
+[RequireComponent(typeof(Rigidbody))]
+public class MoveToPoints : MonoBehaviour {
+
+	#region Variables
+	public Requirement Button;
+	public Switch mySwitch;
+
+    public type MovementType;
+    public enum type
+    {
+        PlayOnce,
+        Loop,
+        PingPong,
+		OnOff
+    }
+		
+    public float Duration;
+    public float Delay = 0;
+
+	public Transform WayPointFolder;
+
+	public bool UseGravity;
+    public bool LookAtWaypoint = false;
+
+	private bool arrived;
+    private bool isLerping;
+	private bool pingPonged = true;
+	private bool temphit = false;
+    private float timeStartedLerping;
+	private float timer;
+	private int currentWp;
+    private Rigidbody myRigidbody;
+	private Vector3 position_Current;
+	private Vector3 position_Destination;
+	private List<Vector3> wayPoints = new List<Vector3>();
+
+	#endregion
+
+    void Awake()
+    {
+		arrived = true;
+		currentWp = 0;
+        myRigidbody = GetComponent<Rigidbody>();
+        myRigidbody.isKinematic = true;
+        myRigidbody.useGravity = UseGravity;
+		myRigidbody.interpolation = RigidbodyInterpolation.Interpolate; //Add smoothness to transitions 
+		PlugInWaypoints();
+
+		if(Button != null && MovementType == type.OnOff)
+		{
+			Button.OneTimeUse = true;
+			Button.HaveTimer = false;
+			Button.Timer = 0f;
+		}
+		if(mySwitch != null && MovementType == type.OnOff) mySwitch.DoTheThingOnlyOnce = true;
+
+        StartLerp();
+    }
+
+    void Update()
+    {
+        if (wayPoints.Count > 0) GetNextWP();
+    }
+
+	void FixedUpdate()
+	{
+		if (!arrived && wayPoints.Count > 0)
+		{
+			if (isLerping)
+			{
+				//Third parameter in Lerp needs to be percentage [0,1]
+				float timeSinceStarted = Time.time - timeStartedLerping;
+				float percentageComplete = timeSinceStarted / Duration; //Speed
+
+				//now you can track Rigidbody.velocity!!!
+				//myRigidbody.MovePosition(Vector3.Lerp(position_Current, position_Destination, percentageComplete));
+
+				//transform.position allows player to stick to platform while moving...
+				//child.rigidbody.MovePosition does not do this
+				transform.position = Vector3.Lerp(position_Current, position_Destination, percentageComplete);
+				if (LookAtWaypoint) transform.LookAt(wayPoints[currentWp]);
+
+				//When we've completed the lerp, we set _isLerping to false
+				if (percentageComplete >= 1.0f)
+				{
+					isLerping = false;
+					arrived = true;
+					temphit = false;
+
+					if(MovementType == type.OnOff) 
+					{
+						if(Button != null) Button.Activated = false;
+						if(mySwitch != null) mySwitch.IsOn = false;
+					}
+				}
+			}
+		}
+	}
+
+	private void PlugInWaypoints()
+	{
+		foreach (Transform child in WayPointFolder) wayPoints.Add(child.position);
+		if (wayPoints.Count == 0) Debug.LogError("No waypoints found for 'MoveToPoints' script.", transform);
+	}
+
+	private void StartLerp()
+	{
+		isLerping = true;
+		timeStartedLerping = Time.time;
+
+		position_Current = transform.position;
+		position_Destination = wayPoints[currentWp];
+	}
+
+    private void GetNextWP()
+    {
+		if(arrived)
+		{
+			timer += Time.deltaTime;
+
+
+			if (timer > Delay)
+			{
+				switch (MovementType)
+				{
+				case type.Loop:
+					currentWp = (currentWp == wayPoints.Count - 1) ? 0 : currentWp += 1;
+					break;
+
+				case type.PlayOnce:
+					if(currentWp != wayPoints.Count - 1) currentWp++;
+					if (currentWp == wayPoints.Count)
+					{
+						enabled = false;
+					}
+
+					break;
+
+				case type.PingPong:
+					if (currentWp == wayPoints.Count - 1) pingPonged = false;
+					else if (currentWp == 0) pingPonged = true;
+
+					currentWp = (pingPonged) ? currentWp += 1 : currentWp -= 1;
+					break;
+
+				case type.OnOff:
+					if(Button != null) Button.doneTheThingOnce = false;
+					if(mySwitch != null) mySwitch.doneTheThingOnce = false;
+					break;
+				}
+
+				timer = 0;
+				StartLerp();
+				arrived = false;
+			}
+		}
+
+		//Exclusive Addition for Button || Switch
+		if(!arrived && MovementType == type.OnOff && !temphit)
+		{
+			if((Button != null && Button.Activated) || (mySwitch != null && mySwitch.IsOn))
+			{
+				temphit = true;
+				if (currentWp == wayPoints.Count - 1) pingPonged = false;
+				else if (currentWp == 0) pingPonged = true;
+				currentWp = (pingPonged) ? currentWp += 1 : currentWp -= 1;
+
+				StartLerp();
+				arrived = false;
+			}
+		}
+    }
+
+    void OnDrawGizmos()
+    {
+        Gizmos.color = Color.red;
+		foreach (Transform child in WayPointFolder) Gizmos.DrawWireSphere(child.position, .2f);
+    }
+}
