@@ -1,0 +1,85 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+[RequireComponent(typeof(AudioSource))]
+	public class Prerequisite_LerpRotation : MonoBehaviour {
+
+	public Requirement Prerequisite;
+	public float Duration = .5f;
+	public Vector3 NewRotation;
+	public AudioClip Sound;
+
+	AudioSource myAudioSource;
+	bool didonce;
+	bool isLerping;
+	float timeStartedLerping;
+
+	Quaternion setRotation_Original;
+	Quaternion setRotation_New;
+
+	Quaternion rotation_Current;
+	Quaternion rotation_Destination;
+
+	void Start()
+	{
+		myAudioSource = GetComponent<AudioSource>();
+		myAudioSource.clip = Sound;
+
+		setRotation_Original = transform.localRotation;
+		setRotation_New = Quaternion.Euler(NewRotation);
+	}
+
+	void Update()
+	{
+		if(Prerequisite.Activated && !didonce)
+		{
+			myAudioSource.PlayOneShot(Sound);
+			didonce = true;
+			Rotate_ToNew();
+		}
+
+		if(!Prerequisite.Activated && didonce)
+		{
+			myAudioSource.PlayOneShot(Sound);
+			didonce = false;
+			Rotate_ToOriginal();
+		}
+	}
+
+	//This is a great process to use any type of lerp 
+	//AND to make sure it goes exactly from point A to B with 100% accuracy.
+	void FixedUpdate()
+	{
+		if (isLerping)
+		{
+			//Third parameter in Lerp needs to be percentage [0,1]
+			float timeSinceStarted = Time.time - timeStartedLerping;
+			float percentageComplete = timeSinceStarted / Duration; //Speed
+
+			transform.localRotation = Quaternion.Lerp(rotation_Current, rotation_Destination, percentageComplete);
+
+			//When we've completed the lerp, we set _isLerping to false
+			if (percentageComplete >= 1.0f) isLerping = false;
+		}
+	}
+
+	void Rotate_ToNew()
+	{
+		isLerping = true;
+		timeStartedLerping = Time.time;
+
+		rotation_Current = setRotation_Original;
+		rotation_Destination = setRotation_New;
+	}
+
+	void Rotate_ToOriginal()
+	{
+		isLerping = true;
+		timeStartedLerping = Time.time;
+
+		rotation_Current = transform.localRotation;
+		rotation_Destination = setRotation_Original;
+	}
+}
+
