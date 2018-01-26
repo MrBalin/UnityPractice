@@ -1,0 +1,119 @@
+using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
+using UnityEngine;
+using UnityStandardAssets.CrossPlatformInput;
+
+[System.Serializable] //Can only be serialized if not using the MonoBehavior Library
+public class HandleStateMachine
+{
+	public enum myPace
+	{
+		Walk,
+		Run,
+		Crawl,
+	}
+	[HideInInspector]public myPace Pace = myPace.Walk;
+
+
+	MonoBehaviour playerControls;
+
+	#region StateMachines
+	//Assign variable below in your Master script, only needed to be called once in Start(),
+	//could be referenced as Example below:
+	//if(myStateMachine.Pace == HandleStateMachine.myPace.Run)...
+
+//	[SerializeField] public HandleStateMachine myStateMachine;
+
+//	void Start()
+//	{
+//		myStateMachine.GoToNextState(this);
+//	}
+
+	//MANAGER
+	public void GoToNextState(MonoBehaviour mb)
+	{
+		playerControls = mb;
+		//Find out the name of the function we want to call
+		string methodName = Pace.ToString() + "State";
+
+		//Searches this class for a function with the name of
+		//Pace + State (for example: CrawlState)
+		MethodInfo info = GetType().GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance);
+		playerControls.StartCoroutine((IEnumerator) info.Invoke(this,null));
+	}
+		
+
+	//STATES
+	IEnumerator WalkState ()
+	{
+		//On Enter
+//		Debug.Log("Walk: Enter");
+		while (Pace == myPace.Walk)
+		{
+			if(	CrossPlatformInputManager.GetButtonDown("Crouch") 
+				&& 
+				PlayerControls_Alpha.instance.myCharacterController.Controller.isGrounded) 
+				Pace = myPace.Crawl;
+
+			if(!PlayerControls_Alpha.instance.StopCharacterControllerMoveFunction && Input.GetKey(KeyCode.LeftShift)) Pace = myPace.Run;
+
+			yield return null;
+		}
+
+		//OnEnd
+//		Debug.Log("Walk: Exit");
+		GoToNextState(playerControls);
+
+	}
+
+	IEnumerator RunState()
+	{
+		//On Enter
+//		Debug.Log("Run: Enter");
+		while (Pace == myPace.Run)
+		{
+			if(	(CrossPlatformInputManager.GetButtonDown("Crouch") && !Input.GetKey(KeyCode.LeftShift))
+				&& 
+				PlayerControls_Alpha.instance.myCharacterController.Controller.isGrounded 
+				&& 
+				!PlayerControls_Alpha.instance.myCamOps.UnderLowCeiling()) 
+				Pace = myPace.Crawl;
+
+			if(	!PlayerControls_Alpha.instance.StopCharacterControllerMoveFunction && 
+				(PlayerControls_Alpha.instance.myCharacterController.Controller.velocity.sqrMagnitude <= 0 || 
+					(PlayerControls_Alpha.instance.myMovement.IsMantling || PlayerControls_Alpha.instance.myMovement.InLadderTrigger))) 
+				Pace = myPace.Walk;
+
+			yield return null;
+		}
+
+		//OnEnd
+//		Debug.Log("Run: Exit");
+		GoToNextState(playerControls);
+	}
+
+	IEnumerator CrawlState()
+	{
+		//On Enter
+//		Debug.Log("Crawl: Enter");
+		while (Pace == myPace.Crawl)
+		{
+			if(PlayerControls_Alpha.instance.myCharacterController.Controller.isGrounded 
+				&& 
+				!PlayerControls_Alpha.instance.myCamOps.UnderLowCeiling())
+			{
+				if(CrossPlatformInputManager.GetButtonDown("Crouch")) Pace = myPace.Walk;
+
+				if(Input.GetKey(KeyCode.LeftShift)) Pace = myPace.Walk;
+			}
+
+			yield return null;
+		}
+
+		//OnEnd
+//		Debug.Log("Crawl: Exit");
+		GoToNextState(playerControls);
+	}
+	#endregion
+}
