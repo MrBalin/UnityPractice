@@ -1,0 +1,101 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Inventory : MonoBehaviour {
+
+	public static Inventory instance;
+	public static int current;
+	public static bool CanSwitchItems = true;
+
+
+	List <string> ItemInventory = new List <string> ();
+	static Transform handle;
+
+
+	void Awake()
+	{
+		instance = this; //Now we can Inventory_Gadgets.instance to call directly from this script!
+		handle = transform;
+		StartCoroutine(Assignments());
+	}
+	IEnumerator Assignments()
+	{
+		foreach (Transform child in handle) ItemInventory.Add(child.name);
+		current = 0;
+
+		//loop may take a while
+		yield return new WaitForSeconds(.02f); 
+
+		Equip(ItemInventory[current]);
+	}
+	
+	// Update is called once per frame
+	void Update () 
+	{
+		if(CanSwitchItems) SwitchItem();
+	}
+
+	public string Current_ToString()
+	{
+		return ItemInventory[current];
+	}
+
+	public string Index_ToString(int i)
+	{
+		return ItemInventory[i];
+	}
+	public int Name_ToIndex(string name)
+	{
+		return ItemInventory.IndexOf(name);
+	}
+
+	public bool Item_Exists(string name)
+	{
+		return ItemInventory.Exists(element => element == name);
+	}
+
+
+
+	public void SwitchItem()
+	{
+		int sizeOfList = ItemInventory.Count;
+		if (sizeOfList >= 2) //failsafe
+		{
+			//Move Next
+			if (Input.GetKeyUp("e"))
+			{
+				UnEquip(ItemInventory[current]);
+				current++;
+				if (current >= sizeOfList) current = 0;
+				Equip(ItemInventory[current]);
+			}
+			//Move Previous
+			if (Input.GetKeyUp("q"))
+			{
+				UnEquip(ItemInventory[current]);
+				current--;
+				if (current < 0) current = sizeOfList - 1;
+				Equip(ItemInventory[current]);
+			}
+		}
+	}
+
+	public void Equip(string name)
+	{
+		foreach (Transform child in handle)
+		{
+			if (child.gameObject.name != name) child.gameObject.SetActive (false);
+			if (child.gameObject.name == name) child.gameObject.SetActive (true);
+		}
+	}
+
+	public void UnEquip(string name)
+	{
+		foreach (Transform child in handle)
+		{
+			if(name == "All") child.gameObject.SetActive (false);
+			if (child.gameObject.name == name) child.gameObject.SetActive (false);
+		}
+	}
+}
