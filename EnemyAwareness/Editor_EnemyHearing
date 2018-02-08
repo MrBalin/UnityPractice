@@ -1,0 +1,18 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEditor;
+
+[CustomEditor(typeof(Enemy_Hearing))]
+public class Editor_EnemyHearing : Editor 
+{
+
+	void OnSceneGUI()
+	{
+		Enemy_Hearing _Hearing = (Enemy_Hearing) target;
+		Handles.color = Color.white;
+
+		//Draw Circle around each object that uses FieldOfView
+		Handles.DrawWireArc(_Hearing.transform.position, Vector3.up, Vector3.forward, 360, _Hearing.Radius);
+	}
+}
