@@ -11,34 +11,30 @@ public class Enemy_Sight : MonoBehaviour {
 	public float Delay_TillSpotPlayer = 2f;
 	float timer_PlayerVisible;
 
-
 	[HideInInspector] public Vector3 Position_Alerted;
 	[HideInInspector] public Vector3 Position_Reset = new Vector3 (1000,1000,1000);
 
 	CharacterController player_CharacterController;
 
 	// Use this for initialization
-	void Start () {
+	void Start () 
+	{
 		player_CharacterController = GameObject.FindGameObjectWithTag("Player").GetComponent<CharacterController>();
+		Position_Alerted = Position_Reset;
 	}
 	
 	// Update is called once per frame
 	void Update () 
 	{
-		if(PlayerSighted())
-		{
-			timer_PlayerVisible += Time.deltaTime;
-		}
-		else
-		{
-			timer_PlayerVisible -= Time.deltaTime;
-		}
+		if(PlayerSighted()) timer_PlayerVisible += Time.deltaTime;
+		else timer_PlayerVisible -= Time.deltaTime;
 
 		timer_PlayerVisible = Mathf.Clamp(timer_PlayerVisible, 0, Delay_TillSpotPlayer);
 
-		if(timer_PlayerVisible >= Delay_TillSpotPlayer && PlayerSighted())
+		if(timer_PlayerVisible >= Delay_TillSpotPlayer && PlayerSighted()) 
 		{
 			Position_Alerted = player_CharacterController.bounds.center;
+			Debug.Log(Position_Alerted);
 		}
 	}
 		
@@ -49,6 +45,7 @@ public class Enemy_Sight : MonoBehaviour {
 		{
 			Vector3 direction = (player_CharacterController.bounds.center - transform.position).normalized;
 			float angle = Vector3.Angle(transform.forward, direction);
+
 			if(angle < Angle / 2)
 			{
 				RaycastHit hit;
@@ -56,7 +53,6 @@ public class Enemy_Sight : MonoBehaviour {
 				{
 					if(hit.collider.gameObject == player_CharacterController.gameObject)
 					{
-						Debug.Log(this.transform.parent.name + " spotted " + player_CharacterController.name);
 						Debug.DrawLine(transform.position, player_CharacterController.bounds.center, Color.red);	
 						return true;
 					}
@@ -66,9 +62,6 @@ public class Enemy_Sight : MonoBehaviour {
 		Position_Alerted = Position_Reset;
 		return false;
 	}
-
-
-
 
 	#region EditorGui
 	//For Use in Editor Script
@@ -82,11 +75,5 @@ public class Enemy_Sight : MonoBehaviour {
 		//Sin(90-x) == Cos(x)
 		return new Vector3(Mathf.Sin(halfAngle * Mathf.Deg2Rad),0,Mathf.Cos(halfAngle * Mathf.Deg2Rad));
 	}
-
-//	void OnDrawGizmos()
-//	{
-//		Gizmos.color = Color.red;
-//		Gizmos.DrawWireSphere(player_CharacterController.bounds.center, .3f);
-//	}
 	#endregion
 }
