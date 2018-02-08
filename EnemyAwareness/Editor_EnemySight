@@ -1,0 +1,25 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEditor;
+
+[CustomEditor(typeof(Enemy_Sight))]
+public class Editor_EnemySight : Editor 
+{
+
+	void OnSceneGUI()
+	{
+		Enemy_Sight _Sight = (Enemy_Sight) target;
+		Handles.color = Color.white;
+
+		//Draw Circle around each object that uses FieldOfView
+		Handles.DrawWireArc(_Sight.transform.position, Vector3.up, Vector3.forward, 360, _Sight.Radius);
+
+		//Draw 2 lines to show the boundaries of the Angle
+		Vector3 viewAngle_A = _Sight.DirectionFromAngle(-_Sight.Angle, false);
+		Handles.DrawLine(_Sight.transform.position, _Sight.transform.position + viewAngle_A * _Sight.Radius);
+
+		Vector3 viewAngle_B = _Sight.DirectionFromAngle(_Sight.Angle, false);
+		Handles.DrawLine(_Sight.transform.position, _Sight.transform.position + viewAngle_B * _Sight.Radius); 
+	}
+}
