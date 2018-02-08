@@ -1,0 +1,89 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.AI;
+
+public class Enemy_Hearing : MonoBehaviour {
+
+
+	public float Radius = 10;
+
+	[HideInInspector] public Vector3 Position_Alerted;
+	[HideInInspector] public Vector3 Position_Reset = new Vector3 (1000,1000,1000);
+
+	NavMeshAgent myNavMeshAgent;
+	private GameObject player;
+
+
+	// Use this for initialization
+	void Start () 
+	{
+		Position_Alerted = Position_Reset;
+		player = GameObject.FindGameObjectWithTag("Player");
+
+		myNavMeshAgent = GetComponentInParent<NavMeshAgent>();
+		myNavMeshAgent.enabled = true;
+	}
+	
+	// Update is called once per frame
+	void Update () 
+	{
+		if(PlayerHeard()) 
+		{
+			Position_Alerted = player.transform.position;
+			Debug.Log("Heard at: " + Position_Alerted);
+		}
+	}
+
+
+
+	public bool PlayerHeard()
+	{
+		bool tempHearing = false;
+		if((CalculatePathLength(player.transform.position) > Radius)) tempHearing = false;
+
+		//If not bothering to sneak around
+		if (PlayerControls_Alpha.instance.myStateMachine.Pace != HandleStateMachine.myPace.Crawl)
+		{
+			//but not just standing around
+			if(PlayerControls_Alpha.instance.myCharacterController.Controller.velocity.x > .01f || PlayerControls_Alpha.instance.myCharacterController.Controller.velocity.z > .01f) 
+			{
+				//Check if within hearing distance
+				if(CalculatePathLength(player.transform.position) <= Radius) 
+				{
+					tempHearing = true;
+					return tempHearing;
+				}
+			}
+		}
+		Position_Alerted = Position_Reset;
+		return tempHearing;
+	}
+
+	float CalculatePathLength(Vector3 targetPosition)
+	{
+		if(Vector3.Distance(targetPosition, transform.position) > Radius) return 1000;
+
+		//Will throw error if Player uses Nav Mesh Obstacle :/
+		NavMeshPath myPath = new NavMeshPath();
+		if(myNavMeshAgent.enabled) myNavMeshAgent.CalculatePath(targetPosition, myPath);
+//		Debug.Log("Path: " + myPath.status);
+		if (myPath.status == NavMeshPathStatus.PathPartial) return 1000;
+		if (myPath.status == NavMeshPathStatus.PathInvalid) return 1000;
+
+
+		//Find All intersections between Enemy & Player
+		//Draw a line to see path!
+		Vector3[] allWayPoints = new Vector3[myPath.corners.Length + 2];
+		allWayPoints[0] = transform.position;
+		allWayPoints[allWayPoints.Length - 1] = targetPosition;
+		for(int i = 0; i < myPath.corners.Length; i++) allWayPoints[i+1] = myPath.corners[i];
+		for (int i = 0; i < myPath.corners.Length-1; i++) Debug.DrawLine(myPath.corners[i], myPath.corners[i+1], Color.red);	
+
+		//Find just how far away Target is
+		float pathlength = 0;
+		for(int i = 0; i < allWayPoints.Length - 1; i++) pathlength += Vector3.Distance(allWayPoints[i], allWayPoints[i+1]);
+//		Debug.Log("Distance: " + pathlength);
+		return pathlength;
+	}
+}
