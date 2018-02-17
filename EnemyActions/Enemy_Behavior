@@ -1,0 +1,51 @@
+using System.Collections;
+using System.Reflection;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.AI;
+
+[RequireComponent(typeof(NavMeshAgent))]
+public class Enemy_Behavior : MonoBehaviour {
+
+//    [SerializeField] public Enemy_StateMachine StateMachine;
+	[HideInInspector] public NavAgent_Patrol myMovement;
+	[HideInInspector] public Enemy_Awareness myAwareness;
+	[HideInInspector] public NavMeshAgent myAgent;
+
+	bool alert = false;
+
+    void Awake()
+    {
+		myMovement = GetComponent<NavAgent_Patrol>();
+		myAwareness = GetComponentInChildren<Enemy_Awareness>();
+		myAgent = GetComponent<NavMeshAgent>();
+    }
+
+
+    #region Health
+    //[Range(0,3)]
+    //public float Health_Max = 3;
+    //private float Health_Current;
+
+    //public void Damage_Take()
+    //{
+    //    float damage_Done = 3;
+
+    //    if (damage_Done < 0) damage_Done = 0;
+    //    if (damage_Done > Health_Max) damage_Done = Health_Max;
+
+    //    Health_Current -= damage_Done;
+
+    //    if (Health_Current <= 0)
+    //    {
+    //        StateMachine.State = Enemy_StateMachine.EnumState.Die;
+    //    }
+    //    else
+    //    {
+    //        //If not dead, presence alerted
+    //        StateMachine.State = Enemy_StateMachine.EnumState.Chase;
+    //    }
+    //}
+    #endregion
+
+}
