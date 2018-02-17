@@ -1,0 +1,182 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.AI;
+
+[RequireComponent(typeof(Enemy_Behavior))]
+public class Enemy_Footsteps : MonoBehaviour {
+
+
+	Enemy_Behavior myBehavior;
+	// Use this for initialization
+	void Start () 
+	{
+		myBehavior = GetComponent<Enemy_Behavior>();
+		//		timerAudio_Time = timerAudio_Active;
+		timerFootsteps_Time = timerFootsteps_Active;
+	}
+	
+	// Update is called once per frame
+	void Update () {
+
+		StepCycles();
+	}
+
+
+
+
+	public float StepsWalk = .3f;
+	public float StepsRun = .3f;
+
+	float timerFootsteps_Active = 0;
+	float timerFootsteps_Time;
+
+
+//	float timerAudio_Active = 0;
+//	float timerAudio_Time;
+
+
+
+	public void StepCycles()
+	{
+		//If Player moving and grounded
+		if (myBehavior.myAgent.velocity.sqrMagnitude > 0 && myBehavior.myAgent.isOnNavMesh)
+		{
+			DoTimer();
+		}
+	}
+
+	void DoTimer()
+	{
+		//Chasing.
+		//ALTER MAX VIA PACE
+		if(myBehavior.myAwareness.Position_Alerted == myBehavior.myAwareness.Position_Reset)
+		{
+			timerFootsteps_Time = StepsWalk;
+		}
+
+		if(myBehavior.myAwareness.Position_Alerted != myBehavior.myAwareness.Position_Reset)
+		{
+			timerFootsteps_Time = StepsRun;
+		}
+
+
+		//ACTUAL TIMER
+		if(timerFootsteps_Active >= 0) timerFootsteps_Active -= Time.deltaTime;
+		if(timerFootsteps_Active <= 0)
+		{
+			
+
+			//Do the Thing
+			PlaceFootprints();
+			//Reset timer
+			timerFootsteps_Active = timerFootsteps_Time;
+		}
+
+//		if(timerAudio_Active >= 0) timerAudio_Active -= Time.deltaTime;
+//		if(timerAudio_Active <= 0)
+//		{
+//
+//			//Do the Thing
+//			PlayClip();
+//			//Reset timer
+//			timerAudio_Active = timerAudio_Time;
+//		}
+	}
+
+
+
+	public GameObject Footprint;
+	Vector3 tempOrigin(Vector3 v)
+	{
+		return 
+			transform.TransformPoint(v * .2f) + 
+			(Vector3.up * -.4f) + 
+			(transform.rotation * (Vector3.back * .3f));
+	}
+	Vector3 tempPosition(HandleRaycast r)
+	{
+		return r.Hit.point + (Vector3.up * .01f);
+	}
+	Quaternion tempRotation(HandleRaycast r)
+	{
+		return Quaternion.LookRotation(r.Hit.normal) * Quaternion.Euler(0,0,transform.localRotation.eulerAngles.y + 90);
+	}
+
+	void PlaceFoot(Vector3 origin)
+	{
+		if(Footprint != null)
+		{
+			
+
+			HandleRaycast foot = new HandleRaycast();
+
+			foot.Origin = origin;
+			foot.Direction = transform.rotation * Vector3.down;
+			foot.Distance = .8f;
+			foot.ShootRaycast();
+
+
+			if(foot.Result)
+			{
+				GameObject.Instantiate(Footprint, tempPosition(foot), tempRotation(foot));
+				switchedFeet = !switchedFeet;
+			}
+		}
+		else Debug.Log(this + " needs Prefab for Footprints.");
+	}
+
+//	public void PlaceBothFeet()
+//	{
+//		//		SummonDustCloud();
+//		PlaceFoot(tempOrigin(Vector3.right));
+//		PlaceFoot(tempOrigin(Vector3.left));
+//	}
+
+	private bool switchedFeet = false;
+	public void PlaceFootprints()
+	{
+		
+		//Right Foot
+		if(!switchedFeet)
+		{
+			PlaceFoot(tempOrigin(Vector3.right));
+			return;
+			//without return, both feet instantiate
+		}
+		//Left Foot
+		if(switchedFeet)
+		{
+			PlaceFoot(tempOrigin(Vector3.left));
+			return;
+		}
+	}
+//
+//    void OnDrawGizmos()
+//    {
+//        //Detail Waypoints for Debugging.
+//        Gizmos.color = Color.red;
+//        
+//
+//		HandleRaycast foot = new HandleRaycast();
+//
+//		foot.Origin = tempOrigin(Vector3.right);
+//		foot.Direction = transform.rotation * Vector3.down;
+//		foot.Distance = .8f;
+//		foot.ShootRaycast();
+//
+//		Gizmos.DrawWireSphere(foot.Origin,.2f);
+//		Gizmos.DrawRay(foot.Origin, foot.Direction);
+//
+//
+//
+//
+//		foot.Origin = tempOrigin(Vector3.left);
+//		foot.Direction = transform.rotation * Vector3.down;
+//		foot.Distance = .8f;
+//		foot.ShootRaycast();
+//
+//		Gizmos.DrawWireSphere(foot.Origin,.2f);
+//		Gizmos.DrawRay(foot.Origin, foot.Direction);
+//    }
+}
