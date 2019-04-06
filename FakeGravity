@@ -1,0 +1,112 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using DG.Tweening;
+
+[RequireComponent(typeof(BoxCollider2D))]
+public class FakeGravity : MonoBehaviour {
+
+    
+    [SerializeField] float FallTime = .8f;
+    //just resize collider.y for fall height.
+    //ground only collider, that way you dont hit while jumping?
+
+
+    [SerializeField] float IntentTimer = .5f;
+    float elapsed;
+    bool initiated;
+
+    CharacterMovement_Manager playerMover;
+    CharacterMovement_Sprites playerSprites;
+    Character_Controls_Gamepad playerPad;
+    
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.transform.tag != "Player") return;
+        playerSprites = collision.transform.GetComponentInChildren<CharacterMovement_Sprites>();
+        playerPad = collision.transform.GetComponent<Character_Controls_Gamepad>();
+    }
+
+
+    private void OnCollisionStay2D(Collision2D collision)
+    {
+        if (collision.transform.tag != "Player") return;
+
+        if (collision.transform.position.y > transform.position.y)
+        {
+            //AND PLAYER INPUTS IN THAT DIRECTION!!!
+            Vector2 tempDirection = new Vector2(Input.GetAxisRaw(playerPad.Axis_X), Input.GetAxisRaw(playerPad.Axis_Y));
+            if (((playerSprites.CurrentDirection == CharacterMovement_Sprites.directionFacing.Left || playerSprites.CurrentDirection == CharacterMovement_Sprites.directionFacing.Right) 
+                && Mathf.Abs(tempDirection.x) > playerPad.Threshold_X)
+                ||
+                (playerSprites.CurrentDirection == CharacterMovement_Sprites.directionFacing.Down && Mathf.Abs(tempDirection.y) > playerPad.Threshold_Y &&
+                (collision.GetContact(0).point.y + .173f) < playerSprites.transform.position.y))
+            {
+
+                //TIMER SO NOT HIT BY MISTAKE
+                elapsed += Time.fixedDeltaTime;
+                if (elapsed > IntentTimer)
+                {
+                    playerMover = collision.transform.GetComponent<CharacterMovement_Manager>();
+                    if (playerMover != null && !initiated)
+                    {
+                        initiated = true;
+                        StartCoroutine(DoThing());
+                    }
+                }
+            }
+        }
+    }
+
+
+
+    IEnumerator DoThing()
+    {
+        //Debug.Log("Started Thing");
+        playerMover.CanOperate = false;
+
+        Rigidbody2D playerRigidbody = playerMover.GetComponent<Rigidbody2D>();
+        playerRigidbody.isKinematic = true;
+
+        CircleCollider2D playerCollider;
+        playerCollider = playerRigidbody.GetComponent<CircleCollider2D>();
+
+
+        //MOVE AWAY FROM LEDGE
+        if(playerSprites.CurrentDirection == CharacterMovement_Sprites.directionFacing.Right || playerSprites.CurrentDirection == CharacterMovement_Sprites.directionFacing.Left)
+        {
+            Vector2 sidePos = playerRigidbody.transform.position;
+            float sideDistance = (playerCollider.radius * 2) + .1f;
+            if (playerSprites.CurrentDirection == CharacterMovement_Sprites.directionFacing.Right) sidePos.x = sidePos.x + sideDistance;
+            if(playerSprites.CurrentDirection == CharacterMovement_Sprites.directionFacing.Left) sidePos.x = sidePos.x - sideDistance;
+
+            playerRigidbody.DOMove(sidePos, .2f).SetEase(Ease.Linear);
+            yield return new WaitForSeconds(.2f);
+        }
+
+
+        //FALL DOWN
+        Vector2 tempPos = playerRigidbody.transform.position;
+        tempPos.y = tempPos.y - ((tempPos.y - transform.position.y)) - (playerCollider.radius + .1f);
+
+        float tempFallTime = (playerRigidbody.transform.position.y - transform.position.y) / FallTime;
+        playerRigidbody.DOMove(tempPos, tempFallTime).SetEase(Ease.Linear);
+        yield return new WaitForSeconds(tempFallTime + .05f);
+
+
+        //Close up
+        playerRigidbody.isKinematic = false;
+        playerMover.CanOperate = true;
+        initiated = false;
+        yield return null;
+    }
+
+
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        if (collision.transform.tag == "Player")
+        {
+            elapsed = 0;
+        }
+    }
+}
