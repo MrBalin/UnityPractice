@@ -1,0 +1,32 @@
+using UnityEngine;
+
+public class Quest_PathPreview : MonoBehaviour
+{
+    [SerializeField] Transform Path;
+    [Header("WayPoint")]
+    [SerializeField] Color Color_Waypoint = Color.cyan;
+    [SerializeField] float WP_Radius = 0.3f;
+    [Header("Path")]
+    [SerializeField] Color Color_Path = Color.blue;
+
+
+    void OnDrawGizmos()
+    {
+        if (Path != null)
+        {
+            Vector3 startPoint = Path.GetChild(0).position;
+            Vector3 previousPoint = startPoint;
+
+            foreach (Transform point in Path)
+            {
+                Gizmos.color = Color_Waypoint;
+                Gizmos.DrawWireSphere(point.position, WP_Radius);
+
+                Gizmos.color = Color_Path;
+                Gizmos.DrawLine(previousPoint, point.position);
+                previousPoint = point.position;
+            }
+            //Gizmos.DrawLine(previousPoint, startPoint);
+        }
+    }
+}
