@@ -1,0 +1,5 @@
+SITE:https://github.com/MrBalin/UnityPractice/new/master/WayPoints
+
+Description:
+Little script to help visualize waypoints player or npc might take.
+I created it to help me figure out how a player should navigate a maze.
